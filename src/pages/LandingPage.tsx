@@ -55,7 +55,7 @@ const LandingPage = () => {
               <div className="flex items-center space-x-4">
 {/* --- START OF LOGO CHANGES --- */}
                 <img 
-                  src="/assets/logo.png" 
+                  src="/assets/logo.jpg" 
                   alt="Company Logo" 
                   className="w-20 h-20 rounded-full object-cover shadow-lg" // Added Tailwind classes here
                 />
