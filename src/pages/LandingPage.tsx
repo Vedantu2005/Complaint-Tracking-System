@@ -53,11 +53,11 @@ const LandingPage = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-{/* --- START OF LOGO CHANGES --- */}
+{/* --- START OF LOGO CHANGES (no rounded-full) --- */}
                 <img 
-                  src="/assets/logo.jpg" 
+                  src="/assets/logo.png" 
                   alt="Company Logo" 
-                  className="w-20 h-20 rounded-full object-cover shadow-lg" // Added Tailwind classes here
+                  className="w-20 h-20 object-contain shadow-lg" // Removed rounded-full, changed to object-contain
                 />
 {/* --- END OF LOGO CHANGES --- */}
                 <div>
@@ -75,9 +75,9 @@ const LandingPage = () => {
                   Settings
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
+             </div>
+           </div>
+         </div>
       </header>
 
       <section className="container mx-auto px-4 py-16">
@@ -187,7 +187,7 @@ const LandingPage = () => {
               Built for transparency, efficiency, and public service.
             </p>
         </div>
-       </footer>
+      </footer>
 
       {/* Police Department Selection Modal */}
       {isPoliceModalOpen && (
