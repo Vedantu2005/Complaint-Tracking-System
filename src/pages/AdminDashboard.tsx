@@ -1,6 +1,4 @@
-// Admin dashboard for managing complaints
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,25 +7,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Filter, Download, Settings, BarChart3, Eye, Plus, FileText } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Search, 
+  Filter, 
+  Download, 
+  Settings, 
+  BarChart3, 
+  Eye, 
+  Shield, 
+  FileText 
+} from 'lucide-react';
 import { ComplaintFilters, PaginationOptions, ComplaintStatus, ComplaintCategory, Priority } from '@/types';
 import { useComplaintData } from '@/hooks/useComplaintData';
 import { toast } from '@/hooks/use-toast';
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'New': return 'status-new';
-    case 'In Review': return 'status-in-progress';
-    case 'Resolved': return 'status-resolved';
-    case 'Rejected': return 'status-rejected';
-    default: return 'status-new';
+    case 'New': return 'status-badge-new';
+    case 'In Review': return 'status-badge-in-review';
+    case 'Resolved': return 'status-badge-resolved';
+    case 'Rejected': return 'status-badge-rejected';
+    default: return 'status-badge-new';
   }
 };
 
 const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
+  return new Date(timestamp).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric'
   });
 };
@@ -46,7 +54,6 @@ const AdminDashboard = () => {
     sortOrder: 'desc'
   });
 
-  // Get filtered and paginated complaints
   const { complaints, total } = useMemo(() => {
     const searchFilters = {
       ...filters,
@@ -55,7 +62,6 @@ const AdminDashboard = () => {
     return getFilteredComplaints(searchFilters, pagination);
   }, [filters, searchQuery, pagination, data]);
 
-  // Calculate summary statistics
   const summaryStats = useMemo(() => {
     if (!data) return { total: 0, new: 0, inReview: 0, resolved: 0, rejected: 0 };
     
@@ -72,7 +78,7 @@ const AdminDashboard = () => {
   const handleStatusUpdate = async (complaintId: string, newStatus: ComplaintStatus) => {
     const success = updateComplaintStatus(complaintId, newStatus, `Status updated via admin dashboard`);
     if (success) {
-      setSelectedComplaints([]); // Clear selection after update
+      setSelectedComplaints([]);
     }
   };
 
@@ -173,100 +179,97 @@ const AdminDashboard = () => {
     }
   };
 
+  // ✅ Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+
+    navigate("/");
+  };
+
   const totalPages = Math.ceil(total / pagination.limit);
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
-      {/* Header */}
-      <header className="border-b bg-card shadow-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Home</span>
-              </Button>
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+    <div className="min-h-screen bg-slate-100">
+      <header 
+        className="bg-cover bg-center text-white shadow-lg"
+        style={{ backgroundImage: `url('/assets/logo.jpeg')` }}
+      >
+        <div className="bg-black bg-opacity-60">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <img 
+                  src="/assets/logo.jpg" 
+                  alt="Maharashtra Police Logo" 
+                  className="h-14 w-14"
+                />
+                <div>
+                  <h1 className="text-xl font-bold tracking-wider">सांगली पोलीस स्टेशन</h1>
+                  <p className="text-sm text-slate-200">Complaint Management Dashboard</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/analytics')}
-                className="flex items-center space-x-2"
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>Analytics</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/settings')}
-                className="flex items-center space-x-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={() => navigate('/analytics')} className="bg-teal-500 text-white hover:bg-teal-600">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Analytics
+                </Button>
+                <Button size="sm" onClick={() => navigate('/settings')} className="bg-teal-500 text-white hover:bg-teal-600">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Button>
+                <Button size="sm" onClick={handleLogout} className="bg-red-500 text-white hover:bg-red-600">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* ---------------- MAIN CONTENT ---------------- */}
       <main className="container mx-auto px-4 py-8">
-        {/* Summary Cards */}
-        <div className="mb-8 grid gap-4 md:grid-cols-5">
-          <Card>
+        {/* Summary Stats */}
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-5">
+          <Card className="border-l-4 border-blue-700">
             <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{summaryStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total</p>
-              </div>
+                <p className="text-3xl font-bold">{summaryStats.total}</p>
+                <p className="text-sm text-muted-foreground">Total Complaints</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-yellow-500">
             <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-600">{summaryStats.new}</p>
+                <p className="text-3xl font-bold">{summaryStats.new}</p>
                 <p className="text-sm text-muted-foreground">New</p>
-              </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-sky-500">
             <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{summaryStats.inReview}</p>
+                <p className="text-3xl font-bold">{summaryStats.inReview}</p>
                 <p className="text-sm text-muted-foreground">In Review</p>
-              </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-green-600">
             <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{summaryStats.resolved}</p>
+                <p className="text-3xl font-bold">{summaryStats.resolved}</p>
                 <p className="text-sm text-muted-foreground">Resolved</p>
-              </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-red-600">
             <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">{summaryStats.rejected}</p>
+                <p className="text-3xl font-bold">{summaryStats.rejected}</p>
                 <p className="text-sm text-muted-foreground">Rejected</p>
-              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters and Actions */}
+        {/* Filters + Actions */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -282,18 +285,16 @@ const AdminDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Search and Filters */}
             <div className="grid gap-4 md:grid-cols-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search complaints..."
+                  placeholder="Search by ID, title, reporter..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              
               <Select 
                 value={filters.status?.[0] || "all"} 
                 onValueChange={(value) => setFilters(prev => ({
@@ -301,9 +302,7 @@ const AdminDashboard = () => {
                   status: value === "all" ? undefined : [value as ComplaintStatus]
                 }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="All Statuses" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="New">New</SelectItem>
@@ -312,7 +311,6 @@ const AdminDashboard = () => {
                   <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
-
               <Select 
                 value={filters.category?.[0] || "all"} 
                 onValueChange={(value) => setFilters(prev => ({
@@ -320,22 +318,16 @@ const AdminDashboard = () => {
                   category: value === "all" ? undefined : [value as ComplaintCategory]
                 }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="Sanitation">Sanitation</SelectItem>
                   <SelectItem value="Roads & Infrastructure">Roads & Infrastructure</SelectItem>
                   <SelectItem value="Utilities">Utilities</SelectItem>
                   <SelectItem value="Public Safety">Public Safety</SelectItem>
-                  <SelectItem value="Parks & Recreation">Parks & Recreation</SelectItem>
-                  <SelectItem value="Housing">Housing</SelectItem>
-                  <SelectItem value="Noise">Noise</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
-
               <Select 
                 value={filters.priority?.[0] || "all"} 
                 onValueChange={(value) => setFilters(prev => ({
@@ -343,9 +335,7 @@ const AdminDashboard = () => {
                   priority: value === "all" ? undefined : [value as Priority]
                 }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Priorities" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="All Priorities" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="Low">Low</SelectItem>
@@ -355,42 +345,14 @@ const AdminDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Bulk Actions */}
             {selectedComplaints.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('In Review')}
-                  className="flex items-center space-x-2"
-                >
-                  <span>Set to In Review</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('Resolved')}
-                  className="flex items-center space-x-2"
-                >
-                  <span>Mark Resolved</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('Rejected')}
-                  className="flex items-center space-x-2"
-                >
-                  <span>Mark Rejected</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportSelected}
-                  className="flex items-center space-x-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Export CSV</span>
+              <div className="flex flex-wrap gap-2 border-t pt-4">
+                <Button size="sm" onClick={() => handleBulkStatusUpdate('In Review')}>Set to In Review</Button>
+                <Button size="sm" onClick={() => handleBulkStatusUpdate('Resolved')}>Mark Resolved</Button>
+                <Button size="sm" onClick={() => handleBulkStatusUpdate('Rejected')}>Mark Rejected</Button>
+                <Button variant="outline" size="sm" onClick={handleExportSelected}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
                 </Button>
               </div>
             )}
@@ -400,19 +362,20 @@ const AdminDashboard = () => {
         {/* Complaints Table */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              Complaints ({total} total)
+            <CardTitle className="flex items-center space-x-2">
+              <Shield className="h-6 w-6 text-blue-800" />
+              <span>Complaints List ({total} total)</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedComplaints.length === complaints.length && complaints.length > 0}
-                        onCheckedChange={handleSelectAll}
+                      <Checkbox 
+                        checked={selectedComplaints.length === complaints.length && complaints.length > 0} 
+                        onCheckedChange={handleSelectAll} 
                       />
                     </TableHead>
                     <TableHead>ID</TableHead>
@@ -421,45 +384,34 @@ const AdminDashboard = () => {
                     <TableHead>Priority</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Reporter</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Date lodged</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {complaints.map((complaint) => (
-                    <TableRow key={complaint.id}>
+                    <TableRow key={complaint.id} className="hover:bg-slate-50">
                       <TableCell>
-                        <Checkbox
-                          checked={selectedComplaints.includes(complaint.id)}
-                          onCheckedChange={(checked) => handleSelectComplaint(complaint.id, checked as boolean)}
+                        <Checkbox 
+                          checked={selectedComplaints.includes(complaint.id)} 
+                          onCheckedChange={(checked) => handleSelectComplaint(complaint.id, checked as boolean)} 
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{complaint.id}</TableCell>
-                      <TableCell className="max-w-xs">
-                        <div className="truncate" title={complaint.title}>
-                          {complaint.title}
-                        </div>
+                      <TableCell className="font-mono text-xs">{complaint.id.substring(0, 8)}...</TableCell>
+                      <TableCell className="max-w-xs font-medium">
+                        <div className="truncate" title={complaint.title}>{complaint.title}</div>
                       </TableCell>
+                      <TableCell><Badge variant="outline">{complaint.category}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant="outline">{complaint.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={complaint.priority === 'Critical' ? 'destructive' : 'secondary'}
-                        >
+                        <Badge variant={complaint.priority === 'Critical' ? 'destructive' : complaint.priority === 'High' ? 'secondary' : 'outline'}>
                           {complaint.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={complaint.status}
-                          onValueChange={(value) => handleStatusUpdate(complaint.id, value as ComplaintStatus)}
-                        >
-                          <SelectTrigger className="w-32">
+                        <Select value={complaint.status} onValueChange={(value) => handleStatusUpdate(complaint.id, value as ComplaintStatus)}>
+                          <SelectTrigger className="w-36 border-none shadow-none focus:ring-0">
                             <SelectValue>
-                              <Badge className={`${getStatusColor(complaint.status)} border-0`}>
-                                {complaint.status}
-                              </Badge>
+                              <Badge className={getStatusColor(complaint.status)}>{complaint.status}</Badge>
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
@@ -473,30 +425,21 @@ const AdminDashboard = () => {
                       <TableCell>{complaint.reporter.name}</TableCell>
                       <TableCell>{formatDate(complaint.createdAt)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/dashboard/${complaint.id}`)}
-                          className="flex items-center space-x-1"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>View</span>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/complaint/${complaint.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              
               {complaints.length === 0 && (
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Complaints Found</h3>
                   <p className="text-muted-foreground">
-                    {searchQuery || Object.keys(filters).length > 0 
-                      ? "No complaints match your current filters. Try adjusting your search criteria."
-                      : "No complaints have been submitted yet."
-                    }
+                    {searchQuery ? "No complaints match your search" : "No complaints available"}
                   </p>
                 </div>
               )}
@@ -504,28 +447,24 @@ const AdminDashboard = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                  {Math.min(pagination.page * pagination.limit, total)} of {total} results
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                    disabled={pagination.page <= 1}
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, total)} of {total} complaints
+                </p>
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    disabled={pagination.page === 1}
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                   >
                     Previous
                   </Button>
-                  <span className="text-sm">
-                    Page {pagination.page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPagination(prev => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))}
-                    disabled={pagination.page >= totalPages}
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    disabled={pagination.page === totalPages}
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                   >
                     Next
                   </Button>

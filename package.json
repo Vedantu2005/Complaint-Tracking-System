@@ -81,5 +81,18 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19"
-  }
+  },
+  "description": "**URL**: https://lovable.dev/projects/8815d865-ef90-42be-be03-fccbec4d29b4",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vedantu2005/citizen-tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Vedantu2005/citizen-tracker/issues"
+  },
+  "homepage": "https://github.com/Vedantu2005/citizen-tracker#readme"
 }

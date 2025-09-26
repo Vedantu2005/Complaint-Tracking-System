@@ -14,11 +14,24 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ArrowLeft, Upload, X, FileText, Home } from 'lucide-react';
-import { ComplaintCategory, Priority, Complaint } from '@/types';
-import { useComplaintData } from '@/hooks/useComplaintData';
+import { ComplaintCategory, Priority, Attachment } from '@/types';
+import { useComplaintData } from '@/hooks/useComplaintData'; // CORRECTED: Using the real hook
 import { toast } from '@/hooks/use-toast';
 
-// Validation schema
+// Define the police-specific categories for validation and dropdowns
+const policeCategories = [
+  'Traffic',
+  'Cyber Crime',
+  'Women & Child Safety',
+  'Local Crime',
+  'Economic Offences',
+  'Narcotics',
+  'Missing Persons'
+] as const;
+
+const PRIORITIES: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
+
+// Validation schema updated for attachments and location
 const complaintSchema = yup.object({
   title: yup.string()
     .required('Title is required')
@@ -30,10 +43,10 @@ const complaintSchema = yup.object({
     .max(1000, 'Description must be less than 1000 characters'),
   category: yup.string()
     .required('Category is required')
-    .oneOf(['Sanitation', 'Roads & Infrastructure', 'Utilities', 'Public Safety', 'Parks & Recreation', 'Housing', 'Noise', 'Other']),
+    .oneOf([...policeCategories]),
   priority: yup.string()
     .required('Priority is required')
-    .oneOf(['Low', 'Medium', 'High', 'Critical']),
+    .oneOf(PRIORITIES),
   location: yup.string()
     .optional()
     .max(200, 'Location must be less than 200 characters'),
@@ -46,7 +59,7 @@ const complaintSchema = yup.object({
     .email('Please enter a valid email address'),
   reporterPhone: yup.string()
     .optional()
-    .matches(/^[+]?[\s\d\-\(\)]*$/, 'Please enter a valid phone number')
+    .matches(/^[+]?[\s\d\-()]*$/, 'Please enter a valid phone number')
     .min(10, 'Phone number must be at least 10 digits'),
   preferredContact: yup.string()
     .required('Preferred contact method is required')
@@ -55,22 +68,9 @@ const complaintSchema = yup.object({
 
 type FormData = yup.InferType<typeof complaintSchema>;
 
-const CATEGORIES: ComplaintCategory[] = [
-  'Sanitation',
-  'Roads & Infrastructure', 
-  'Utilities',
-  'Public Safety',
-  'Parks & Recreation',
-  'Housing',
-  'Noise',
-  'Other'
-];
-
-const PRIORITIES: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
-
 const SubmitComplaint = () => {
   const navigate = useNavigate();
-  const { createComplaint } = useComplaintData();
+  const { createComplaint } = useComplaintData(); // CORRECTED: Using the real hook
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -96,7 +96,7 @@ const SubmitComplaint = () => {
       if (!isValidType) {
         toast({
           title: "Invalid File Type",
-          description: `${file.name} is not a supported file type. Please upload images or PDF files only.`,
+          description: `${file.name} is not a supported file type.`,
           variant: "destructive"
         });
         return false;
@@ -105,15 +105,13 @@ const SubmitComplaint = () => {
       if (!isValidSize) {
         toast({
           title: "File Too Large",
-          description: `${file.name} is too large. Please upload files smaller than 5MB.`,
+          description: `${file.name} is larger than 5MB.`,
           variant: "destructive"
         });
         return false;
       }
-      
       return true;
     });
-
     setAttachments(prev => [...prev, ...validFiles].slice(0, 5)); // Max 5 files
   };
 
@@ -123,11 +121,10 @@ const SubmitComplaint = () => {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    
     try {
       // Convert files to base64 for storage
       const attachmentPromises = attachments.map(file => {
-        return new Promise<{id: string, name: string, mime: string, base64: string, size: number}>((resolve, reject) => {
+        return new Promise<Attachment>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
             resolve({
@@ -165,17 +162,15 @@ const SubmitComplaint = () => {
       if (complaint) {
         toast({
           title: "Complaint Submitted Successfully",
-          description: `Your complaint has been submitted with ID: ${complaint.id}. You can track its progress using this ID.`
+          description: `Your complaint ID is: ${complaint.id}. You will be redirected shortly.`
         });
-        
-        // Navigate to tracking page
-        navigate(`/my/${complaint.id}`);
+        setTimeout(() => navigate(`/my/${complaint.id}`), 2000);
       }
     } catch (error) {
       console.error('Failed to submit complaint:', error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your complaint. Please try again.",
+        description: "An error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -184,32 +179,15 @@ const SubmitComplaint = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
-      {/* Header */}
-      <header className="border-b bg-card shadow-card">
+    <div className="min-h-screen bg-slate-50">
+      <header className="border-b bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Home</span>
-              </Button>
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h1 className="text-xl font-semibold">Submit Complaint</h1>
-              </div>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/track')}
-              className="flex items-center space-x-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="flex items-center space-x-2">
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Home</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/track')} className="flex items-center space-x-2">
               <Home className="h-4 w-4" />
               <span>Track Complaint</span>
             </Button>
@@ -217,290 +195,84 @@ const SubmitComplaint = () => {
         </div>
       </header>
 
-      {/* Main Form */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-2xl">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>New Complaint</span>
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Please provide detailed information about your complaint. All fields marked with * are required.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Title */}
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Complaint Title *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Brief, descriptive title for your complaint" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      <main className="container mx-auto max-w-2xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Submit a New Complaint</span>
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Please provide detailed information. Fields marked with * are required.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField control={form.control} name="title" render={({ field }) => (
+                  <FormItem><FormLabel>Title *</FormLabel><FormControl><Input placeholder="Brief summary of the issue" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
 
-                  {/* Description */}
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Detailed Description *</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Please provide a detailed description of the issue, including when it occurred, what happened, and any relevant details..."
-                            className="min-h-32"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem><FormLabel>Detailed Description *</FormLabel><FormControl><Textarea placeholder="Describe the incident, including location, time, and relevant details..." className="min-h-32" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
 
-                  {/* Category and Priority */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField control={form.control} name="category" render={({ field }) => (
+                    <FormItem><FormLabel>Category *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl><SelectContent>{policeCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="priority" render={({ field }) => (
+                    <FormItem><FormLabel>Priority *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger></FormControl><SelectContent>{PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  )} />
+                </div>
+                
+                <FormField control={form.control} name="location" render={({ field }) => (
+                  <FormItem><FormLabel>Location (Optional)</FormLabel><FormControl><Input placeholder="Address or area where the issue occurred" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+
+                <div className="space-y-4 rounded-md border p-4">
+                  <h3 className="text-lg font-medium">Your Contact Information</h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {CATEGORIES.map(category => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {PRIORITIES.map(priority => (
-                                <SelectItem key={priority} value={priority}>
-                                  {priority}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="reporterName" render={({ field }) => (<FormItem><FormLabel>Full Name *</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="reporterEmail" render={({ field }) => (<FormItem><FormLabel>Email Address *</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   </div>
-
-                  {/* Location */}
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location (Optional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Address or location where the issue occurred" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Contact Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Contact Information</h3>
-                    
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="reporterName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="reporterEmail"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email Address *</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="your.email@example.com" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="reporterPhone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel" 
-                                placeholder="+1-555-123-4567" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="preferredContact"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preferred Contact Method *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="email">Email</SelectItem>
-                                <SelectItem value="phone">Phone</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField control={form.control} name="reporterPhone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="+91-123-456-7890" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="preferredContact" render={({ field }) => (<FormItem><FormLabel>Preferred Contact *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="email">Email</SelectItem><SelectItem value="phone">Phone</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                   </div>
+                </div>
 
-                  {/* File Attachments */}
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Supporting Documents (Optional)</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Upload images or PDF files to support your complaint. Max 5 files, 5MB each.
-                      </p>
+                <div className="space-y-2">
+                  <Label>Attachments (Optional)</Label>
+                  <p className="text-sm text-muted-foreground">Max 5 files (images or PDF), 5MB each.</p>
+                  <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()} className="flex items-center space-x-2">
+                    <Upload className="h-4 w-4" /><span>Upload Files</span>
+                  </Button>
+                  <input id="file-upload" type="file" multiple accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
+                  {attachments.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                      {attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between rounded-md border p-2">
+                          <div className="flex items-center space-x-2 truncate"><FileText className="h-4 w-4 flex-shrink-0" /><span className="text-sm truncate">{file.name}</span><Badge variant="secondary">{(file.size / 1024).toFixed(1)} KB</Badge></div>
+                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(index)}><X className="h-4 w-4" /></Button>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                        className="flex items-center space-x-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span>Upload Files</span>
-                      </Button>
-                      <input
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </div>
+                  )}
+                </div>
 
-                    {attachments.length > 0 && (
-                      <div className="space-y-2">
-                        {attachments.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between rounded-md border p-2">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{file.name}</span>
-                              <Badge variant="secondary" className="text-xs">
-                                {(file.size / 1024).toFixed(1)} KB
-                              </Badge>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeAttachment(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="flex justify-end space-x-4">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => navigate('/')}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                      className="min-w-32"
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="flex justify-end space-x-4 pt-4 border-t">
+                  <Button type="button" variant="outline" onClick={() => navigate('/')}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting} className="min-w-32">{isSubmitting ? 'Submitting...' : 'Submit Complaint'}</Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 };
 
 export default SubmitComplaint;
+
