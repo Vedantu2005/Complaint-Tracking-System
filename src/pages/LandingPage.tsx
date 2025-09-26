@@ -53,11 +53,7 @@ const LandingPage = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <img 
-                  src="/assets/logo.jpg"
-                  alt="Maharashtra Police Logo" 
-                  className="h-14 w-14"
-                />
+                <img src="/assets/logo.png" alt="Company Logo" />
                 <div>
                   <h1 className="text-xl font-bold tracking-wider">सांगली पोलीस स्टेशन</h1>
                   <p className="text-sm text-slate-200">Complaint Management Dashboard</p>
